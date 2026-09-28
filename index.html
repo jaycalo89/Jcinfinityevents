@@ -487,6 +487,8 @@
   .form-submit:hover{ background:var(--gold-light); }
   .form-status{ font-size:0.85rem; margin-top:14px; color:var(--gold-light); display:none; }
   .form-status.show{ display:block; }
+  .form-status.warn{ color:#e2725b; }
+  .field-invalid{ border-color:#e2725b !important; box-shadow:0 0 0 1px #e2725b; }
 
   /* ---------- Footer ---------- */
   footer{ padding:60px 0 34px; text-align:center; }
@@ -839,7 +841,7 @@
         </div>
       </div>
 
-      <form id="inquiryForm" name="inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <form id="inquiryForm" name="inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
         <input type="hidden" name="form-name" value="inquiry">
         <p class="hp-field"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
         <div class="row2">
@@ -884,6 +886,7 @@
         <p class="form-note">All fields are required. We'll get back to you shortly at the email or phone number you provide.</p>
         <p class="form-status" id="formStatus">Thanks! Your inquiry has been sent — we'll be in touch shortly. If you don't hear back within a day or two, email us directly at bookjc.infinityevents@gmail.com.</p>
         <p class="form-status" id="formError">Something went wrong sending your inquiry. Please email us directly at <a href="mailto:bookjc.infinityevents@gmail.com">bookjc.infinityevents@gmail.com</a> or call 754-308-8065.</p>
+        <p class="form-status warn" id="formValidation">Please fill in the highlighted field(s) above — including the event date — then submit again.</p>
       </form>
     </div>
   </section>
@@ -1216,6 +1219,14 @@
   var form = document.getElementById('inquiryForm');
   var statusMsg = document.getElementById('formStatus');
   var errorStatus = document.getElementById('formError');
+  var validationMsg = document.getElementById('formValidation');
+  var requiredFields = form.querySelectorAll('[required]');
+
+  requiredFields.forEach(function(field){
+    field.addEventListener('input', function(){
+      field.classList.remove('field-invalid');
+    });
+  });
 
   function encodeFormData(data){
     return Object.keys(data).map(function(k){
@@ -1225,12 +1236,24 @@
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
-    if(!form.checkValidity()){
-      form.reportValidity();
-      return;
-    }
     statusMsg.classList.remove('show');
     errorStatus.classList.remove('show');
+    validationMsg.classList.remove('show');
+
+    if(!form.checkValidity()){
+      var firstInvalid = null;
+      requiredFields.forEach(function(field){
+        if(!field.value){
+          field.classList.add('field-invalid');
+          if(!firstInvalid) firstInvalid = field;
+        } else {
+          field.classList.remove('field-invalid');
+        }
+      });
+      validationMsg.classList.add('show');
+      if(firstInvalid){ firstInvalid.scrollIntoView({behavior:'smooth', block:'center'}); firstInvalid.focus(); }
+      return;
+    }
 
     var name = document.getElementById('fname').value;
     var email = document.getElementById('femail').value;
