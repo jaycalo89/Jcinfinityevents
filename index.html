@@ -857,9 +857,8 @@
         </div>
       </div>
 
-      <form id="inquiryForm" name="inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
-        <input type="hidden" name="form-name" value="inquiry">
-        <p class="hp-field"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+      <form id="inquiryForm" name="inquiry" method="POST" action="https://formsubmit.co/bookjc.infinityevents@gmail.com" novalidate>
+        <p class="hp-field" aria-hidden="true"><label>Leave this empty: <input type="text" id="fhoney" name="_honey" tabindex="-1" autocomplete="off"></label></p>
         <div class="row2">
           <div class="field">
             <label for="fname">Full Name <span class="req">*</span></label>
@@ -1675,23 +1674,30 @@
     var pkg = document.getElementById('fpackage').value;
     var msg = document.getElementById('fmessage').value;
 
+    // Honeypot: bots fill the hidden field, people never see it
+    if(document.getElementById('fhoney').value){ statusMsg.classList.add('show'); form.reset(); return; }
+
     var payload = {
-      'form-name': 'inquiry',
-      'fname': name, 'femail': email, 'fphone': phone,
-      'fdate': date, 'fvenue': venue, 'fpackage': pkg, 'fmessage': msg
+      '_subject': 'New Event Inquiry from ' + name,
+      '_template': 'table',
+      '_captcha': 'false',
+      'name': name, 'email': email, 'phone': phone,
+      'event_date': date, 'venue': venue, 'package': pkg, 'message': msg
     };
 
-    fetch('/', {
+    fetch('https://formsubmit.co/ajax/bookjc.infinityevents@gmail.com', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: encodeFormData(payload)
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
     }).then(function(response){
-      if(response.ok){
-        statusMsg.classList.add('show');
-        form.reset();
-      } else {
-        throw new Error('Form submission failed');
-      }
+      return response.json().then(function(data){
+        if(response.ok && (data.success === true || data.success === 'true')){
+          statusMsg.classList.add('show');
+          form.reset();
+        } else {
+          throw new Error('Form submission failed');
+        }
+      });
     }).catch(function(){
       // Fallback: open a pre-filled email as a last resort
       var subject = 'New Event Inquiry — ' + name;
